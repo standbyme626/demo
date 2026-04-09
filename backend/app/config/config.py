@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     # 数据库配置
     MONGO_URI: Optional[str] = None
     
+    # 飞书应用配置
+    FEISHU_APP_ID: Optional[str] = None
+    FEISHU_APP_SECRET: Optional[str] = None
+    FEISHU_BITABLE_APP_TOKEN: Optional[str] = None
+    FEISHU_BITABLE_TABLE_ID: Optional[str] = None
+    
     class Config:
         env_file = ".env"
         case_sensitive = True

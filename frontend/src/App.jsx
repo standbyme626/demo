@@ -1,254 +1,626 @@
-import { useState } from 'react'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import { 
+  Layout, 
+  Typography, 
+  Button, 
+  Upload, 
+  message, 
+  Space, 
+  Row, 
+  Col, 
+  Divider,
+  Modal,
+  Steps,
+  Card
+} from 'antd';
+import { 
+  InboxOutlined, 
+  PlayCircleOutlined, 
+  ReloadOutlined 
+} from '@ant-design/icons';
+import AgentCard from './components/AgentCard';
+import CustomerTable from './components/CustomerTable';
+import CustomerDetailDrawer from './components/CustomerDetailDrawer';
+import FeishuStatus from './components/FeishuStatus';
+import './App.css';
+
+const { Header, Content } = Layout;
+const { Title, Text } = Typography;
+const { Dragger } = Upload;
+const { Step } = Steps;
+
+const API_BASE = 'http://localhost:8000';
 
 function App() {
-  const [file, setFile] = useState(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadResult, setUploadResult] = useState(null)
-  const [error, setError] = useState(null)
+  const [file, setFile] = useState(null);
+  const [fileId, setFileId] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   
-  // 客户搜索相关状态
-  const [searchKeywords, setSearchKeywords] = useState('')
-  const [searchIndustry, setSearchIndustry] = useState('')
-  const [searchLocation, setSearchLocation] = useState('')
-  const [searchCompanySize, setSearchCompanySize] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchResults, setSearchResults] = useState([])
-  const [searchError, setSearchError] = useState(null)
+  const [agentStatuses, setAgentStatuses] = useState({
+    company: 'idle',
+    search: 'idle',
+    grading: 'idle',
+    action: 'idle',
+    feishu: 'idle',
+  });
+  
+  const [agentProgress, setAgentProgress] = useState({
+    company: 0,
+    search: 0,
+    grading: 0,
+    action: 0,
+    feishu: 0,
+  });
+  
+  const [agentData, setAgentData] = useState({
+    company: null,
+    search: null,
+    grading: null,
+    action: null,
+    feishu: null,
+  });
+  
+  const [companyProfile, setCompanyProfile] = useState(null);
+  const [customerStrategy, setCustomerStrategy] = useState(null);
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  
+  const [feishuConnectionStatus, setFeishuConnectionStatus] = useState('unknown');
+  const [feishuSyncing, setFeishuSyncing] = useState(false);
+  const [feishuErrors, setFeishuErrors] = useState([]);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0]
-    if (selectedFile && selectedFile.type === 'application/pdf') {
-      setFile(selectedFile)
-      setError(null)
-    } else {
-      setError('请选择 PDF 文件')
-      setFile(null)
+  useEffect(() => {
+    testFeishuConnection();
+  }, []);
+
+  const uploadProps = {
+    name: 'file',
+    multiple: false,
+    accept: '.pdf',
+    beforeUpload: (file) => {
+      if (file.type !== 'application/pdf') {
+        message.error('请上传 PDF 文件');
+        return false;
+      }
+      setFile(file);
+      return false;
+    },
+    fileList: file ? [{ uid: '1', name: file.name, status: 'done' }] : [],
+  };
+
+  const testFeishuConnection = async () => {
+    setFeishuConnectionStatus('testing');
+    try {
+      const response = await fetch(`${API_BASE}/feishu/test-connection`);
+      const result = await response.json();
+      if (result.success) {
+        setFeishuConnectionStatus('connected');
+      } else {
+        setFeishuConnectionStatus('disconnected');
+      }
+    } catch (error) {
+      setFeishuConnectionStatus('disconnected');
     }
-  }
+  };
 
-  const handleUpload = async () => {
+  const simulateProgress = (agentType, duration) => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 20;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+      }
+      setAgentProgress(prev => ({ ...prev, [agentType]: Math.min(Math.round(progress), 100) }));
+    }, duration / 5);
+    return interval;
+  };
+
+  const startFullProcess = async () => {
     if (!file) {
-      setError('请先选择文件')
-      return
+      message.error('请先上传 PDF 文件');
+      return;
     }
 
-    setIsUploading(true)
-    setUploadProgress(0)
-    setError(null)
-    setUploadResult(null)
+    setIsProcessing(true);
+    setCurrentStep(0);
+    setCustomers([]);
+    setFeishuErrors([]);
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
+      await runStep1Upload();
+      await runStep2CompanyProfile();
+      await runStep3CustomerStrategy();
+      await runStep4CustomerSearch();
+      await runStep5Grading();
+      await runStep6ActionSuggestions();
+      
+      message.success('所有步骤完成！');
+    } catch (error) {
+      message.error(`处理失败: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-      const response = await fetch('http://localhost:8000/upload/pdf', {
+  const runStep1Upload = async () => {
+    setAgentStatuses(prev => ({ ...prev, company: 'running' }));
+    setCurrentStep(0);
+    const progressInterval = simulateProgress('company', 2000);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch(`${API_BASE}/upload/pdf`, {
         method: 'POST',
         body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error('上传失败')
+      });
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || '上传失败');
       }
-
-      const result = await response.json()
-      setUploadResult(result)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsUploading(false)
-      setUploadProgress(100)
+      
+      setFileId(result.file_id);
+      clearInterval(progressInterval);
+      setAgentProgress(prev => ({ ...prev, company: 100 }));
+      setAgentStatuses(prev => ({ ...prev, company: 'completed' }));
+      setAgentData(prev => ({ ...prev, company: result }));
+      
+    } catch (error) {
+      clearInterval(progressInterval);
+      setAgentStatuses(prev => ({ ...prev, company: 'error' }));
+      throw error;
     }
-  }
+  };
 
-  const handleSearch = async () => {
-    if (!searchKeywords.trim()) {
-      setSearchError('请输入搜索关键词')
-      return
-    }
-
-    setIsSearching(true)
-    setSearchError(null)
-    setSearchResults([])
+  const runStep2CompanyProfile = async () => {
+    setAgentStatuses(prev => ({ ...prev, company: 'running' }));
+    setCurrentStep(1);
+    const progressInterval = simulateProgress('company', 3000);
 
     try {
-      const response = await fetch('http://localhost:8000/search-customers', {
+      const response = await fetch(`${API_BASE}/generate-profile/${fileId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          keywords: searchKeywords.split(',').map(k => k.trim()),
-          industry: searchIndustry,
-          location: searchLocation,
-          company_size: searchCompanySize
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('搜索失败')
+      });
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || '生成公司画像失败');
       }
-
-      const result = await response.json()
-      if (result.success) {
-        setSearchResults(result.results)
-      } else {
-        setSearchError(result.error)
-      }
-    } catch (err) {
-      setSearchError(err.message)
-    } finally {
-      setIsSearching(false)
+      
+      setCompanyProfile(result.profile);
+      clearInterval(progressInterval);
+      setAgentProgress(prev => ({ ...prev, company: 100 }));
+      setAgentStatuses(prev => ({ ...prev, company: 'completed' }));
+      setAgentData(prev => ({ ...prev, company: result.profile }));
+      
+    } catch (error) {
+      clearInterval(progressInterval);
+      setAgentStatuses(prev => ({ ...prev, company: 'error' }));
+      throw error;
     }
-  }
+  };
+
+  const runStep3CustomerStrategy = async () => {
+    setAgentStatuses(prev => ({ ...prev, search: 'running' }));
+    setCurrentStep(2);
+    const progressInterval = simulateProgress('search', 2000);
+
+    try {
+      const response = await fetch(`${API_BASE}/generate-strategy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(companyProfile),
+      });
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || '生成客户策略失败');
+      }
+      
+      setCustomerStrategy(result.strategy);
+      clearInterval(progressInterval);
+      setAgentProgress(prev => ({ ...prev, search: 100 }));
+      setAgentStatuses(prev => ({ ...prev, search: 'completed' }));
+      setAgentData(prev => ({ ...prev, search: result.strategy }));
+      
+    } catch (error) {
+      clearInterval(progressInterval);
+      setAgentStatuses(prev => ({ ...prev, search: 'error' }));
+      throw error;
+    }
+  };
+
+  const runStep4CustomerSearch = async () => {
+    setAgentStatuses(prev => ({ ...prev, search: 'running' }));
+    setCurrentStep(3);
+    const progressInterval = simulateProgress('search', 4000);
+
+    try {
+      const keywords = customerStrategy?.target_markets?.slice(0, 3) || ['import', 'export', 'trade'];
+      
+      const response = await fetch(`${API_BASE}/search-customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          keywords,
+          location: customerStrategy?.priority_markets?.[0],
+        }),
+      });
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || '搜索客户失败');
+      }
+      
+      const customersWithId = result.results.map((c, idx) => ({
+        ...c,
+        id: idx + 1,
+        feishu_synced: false,
+      }));
+      
+      setCustomers(customersWithId);
+      clearInterval(progressInterval);
+      setAgentProgress(prev => ({ ...prev, search: 100 }));
+      setAgentStatuses(prev => ({ ...prev, search: 'completed' }));
+      setAgentData(prev => ({ ...prev, search: result.results }));
+      
+    } catch (error) {
+      clearInterval(progressInterval);
+      setAgentStatuses(prev => ({ ...prev, search: 'error' }));
+      throw error;
+    }
+  };
+
+  const runStep5Grading = async () => {
+    setAgentStatuses(prev => ({ ...prev, grading: 'running' }));
+    setCurrentStep(4);
+    const progressInterval = simulateProgress('grading', 3000);
+
+    try {
+      const response = await fetch(`${API_BASE}/grade-customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customers,
+          company_profile: companyProfile,
+          customer_strategy: customerStrategy,
+        }),
+      });
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || '客户分级失败');
+      }
+      
+      const gradedCustomers = customers.map((c, idx) => ({
+        ...c,
+        ...result.graded_customers[idx],
+      }));
+      
+      setCustomers(gradedCustomers);
+      clearInterval(progressInterval);
+      setAgentProgress(prev => ({ ...prev, grading: 100 }));
+      setAgentStatuses(prev => ({ ...prev, grading: 'completed' }));
+      setAgentData(prev => ({ ...prev, grading: result.graded_customers }));
+      
+    } catch (error) {
+      clearInterval(progressInterval);
+      setAgentStatuses(prev => ({ ...prev, grading: 'error' }));
+      throw error;
+    }
+  };
+
+  const runStep6ActionSuggestions = async () => {
+    setAgentStatuses(prev => ({ ...prev, action: 'running' }));
+    setCurrentStep(5);
+    const progressInterval = simulateProgress('action', 3000);
+
+    try {
+      const response = await fetch(`${API_BASE}/generate-action-suggestions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          graded_customers: customers,
+          company_profile: companyProfile,
+          customer_strategy: customerStrategy,
+        }),
+      });
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || '生成动作建议失败');
+      }
+      
+      const customersWithSuggestions = customers.map((c, idx) => ({
+        ...c,
+        ...result.suggestions[idx],
+      }));
+      
+      setCustomers(customersWithSuggestions);
+      clearInterval(progressInterval);
+      setAgentProgress(prev => ({ ...prev, action: 100 }));
+      setAgentStatuses(prev => ({ ...prev, action: 'completed' }));
+      setAgentData(prev => ({ ...prev, action: result.suggestions }));
+      
+    } catch (error) {
+      clearInterval(progressInterval);
+      setAgentStatuses(prev => ({ ...prev, action: 'error' }));
+      throw error;
+    }
+  };
+
+  const syncToFeishu = async (customer) => {
+    setFeishuSyncing(true);
+    setAgentStatuses(prev => ({ ...prev, feishu: 'running' }));
+
+    try {
+      const response = await fetch(`${API_BASE}/feishu/add-record`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customer),
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        setCustomers(prev => prev.map(c => 
+          c.id === customer.id ? { ...c, feishu_synced: true } : c
+        ));
+        setAgentStatuses(prev => ({ ...prev, feishu: 'completed' }));
+        setLastSyncTime(new Date().toLocaleString());
+        message.success('同步到飞书成功！');
+      } else {
+        throw new Error(result.error || '同步失败');
+      }
+    } catch (error) {
+      setFeishuErrors(prev => [...prev, { company_name: customer.company_name, error: error.message }]);
+      setAgentStatuses(prev => ({ ...prev, feishu: 'error' }));
+      message.error(`同步失败: ${error.message}`);
+    } finally {
+      setFeishuSyncing(false);
+    }
+  };
+
+  const syncAllToFeishu = async () => {
+    setFeishuSyncing(true);
+    setAgentStatuses(prev => ({ ...prev, feishu: 'running' }));
+    const progressInterval = simulateProgress('feishu', 5000);
+
+    try {
+      const unsynced = customers.filter(c => !c.feishu_synced);
+      const response = await fetch(`${API_BASE}/feishu/add-records-batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(unsynced),
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        setCustomers(prev => prev.map(c => ({ ...c, feishu_synced: true })));
+        clearInterval(progressInterval);
+        setAgentProgress(prev => ({ ...prev, feishu: 100 }));
+        setAgentStatuses(prev => ({ ...prev, feishu: 'completed' }));
+        setLastSyncTime(new Date().toLocaleString());
+        message.success('全部同步成功！');
+      } else {
+        throw new Error(result.error || '批量同步失败');
+      }
+    } catch (error) {
+      clearInterval(progressInterval);
+      setAgentStatuses(prev => ({ ...prev, feishu: 'error' }));
+      message.error(`批量同步失败: ${error.message}`);
+    } finally {
+      setFeishuSyncing(false);
+    }
+  };
+
+  const viewCustomerDetail = (customer) => {
+    setSelectedCustomer(customer);
+    setDrawerVisible(true);
+  };
+
+  const resetProcess = () => {
+    setFile(null);
+    setFileId(null);
+    setIsProcessing(false);
+    setCurrentStep(0);
+    setAgentStatuses({
+      company: 'idle',
+      search: 'idle',
+      grading: 'idle',
+      action: 'idle',
+      feishu: 'idle',
+    });
+    setAgentProgress({
+      company: 0,
+      search: 0,
+      grading: 0,
+      action: 0,
+      feishu: 0,
+    });
+    setAgentData({
+      company: null,
+      search: null,
+      grading: null,
+      action: null,
+      feishu: null,
+    });
+    setCompanyProfile(null);
+    setCustomerStrategy(null);
+    setCustomers([]);
+    setSelectedCustomer(null);
+    setDrawerVisible(false);
+    setFeishuErrors([]);
+  };
+
+  const syncedCount = customers.filter(c => c.feishu_synced).length;
+  const failedCount = feishuErrors.length;
 
   return (
-    <div className="app">
-      <h1>外贸获客智能体</h1>
-      
-      <div className="upload-container">
-        <h2>上传 PDF 文件</h2>
-        
-        <div className="file-input-wrapper">
-          <input 
-            type="file" 
-            accept=".pdf" 
-            onChange={handleFileChange}
-            disabled={isUploading}
-          />
-          {file && (
-            <div className="file-info">
-              <span>{file.name}</span>
-              <span>{(file.size / 1024).toFixed(2)} KB</span>
+    <Layout className="app-layout">
+      <Header className="app-header">
+        <div className="header-content">
+          <Title level={3} style={{ margin: 0, color: 'white' }}>
+            外贸获客智能体 Demo
+          </Title>
+          <Space>
+            <Button 
+              icon={<ReloadOutlined />} 
+              onClick={resetProcess}
+              disabled={isProcessing}
+            >
+              重置
+            </Button>
+          </Space>
+        </div>
+      </Header>
+
+      <Content className="app-content">
+        <div className="content-wrapper">
+          {!file ? (
+            <div className="upload-section">
+              <Dragger {...uploadProps} className="upload-dragger">
+                <p className="ant-upload-drag-icon">
+                  <InboxOutlined style={{ fontSize: 48, color: '#1890ff' }} />
+                </p>
+                <p className="ant-upload-text">
+                  点击或拖拽上传公司导航/产品资料 PDF
+                </p>
+                <p className="ant-upload-hint">
+                  支持单个 PDF 文件上传
+                </p>
+              </Dragger>
             </div>
+          ) : (
+            <>
+              <div className="control-section">
+                <Card>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <Text strong>已选择文件：</Text>
+                      <Text style={{ marginLeft: 8 }}>{file.name}</Text>
+                    </div>
+                    <Button 
+                      type="primary" 
+                      size="large"
+                      icon={<PlayCircleOutlined />}
+                      onClick={startFullProcess}
+                      loading={isProcessing}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? '处理中...' : '开始执行'}
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="steps-section">
+                <Steps current={currentStep} direction="vertical" size="small">
+                  <Step title="上传 PDF" description="文件上传与预处理" />
+                  <Step title="公司画像" description="提取公司信息" />
+                  <Step title="客户策略" description="生成目标客户方向" />
+                  <Step title="客户搜索" description="搜索候选客户" />
+                  <Step title="客户分级" description="A/B/C/D 分级" />
+                  <Step title="动作建议" description="生成跟进建议" />
+                </Steps>
+              </div>
+
+              <Divider />
+
+              <div className="agents-section">
+                <Title level={4}>Agent 工作状态</Title>
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                    <AgentCard 
+                      type="company"
+                      status={agentStatuses.company}
+                      progress={agentProgress.company}
+                      data={agentData.company}
+                    />
+                  </Col>
+                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                    <AgentCard 
+                      type="search"
+                      status={agentStatuses.search}
+                      progress={agentProgress.search}
+                      data={agentData.search}
+                    />
+                  </Col>
+                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                    <AgentCard 
+                      type="grading"
+                      status={agentStatuses.grading}
+                      progress={agentProgress.grading}
+                      data={agentData.grading}
+                    />
+                  </Col>
+                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                    <AgentCard 
+                      type="action"
+                      status={agentStatuses.action}
+                      progress={agentProgress.action}
+                      data={agentData.action}
+                    />
+                  </Col>
+                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                    <AgentCard 
+                      type="feishu"
+                      status={agentStatuses.feishu}
+                      progress={agentProgress.feishu}
+                      data={agentData.feishu}
+                    />
+                  </Col>
+                </Row>
+              </div>
+
+              <Divider />
+
+              <div className="feishu-section">
+                <FeishuStatus 
+                  connectionStatus={feishuConnectionStatus}
+                  totalCount={customers.length}
+                  syncedCount={syncedCount}
+                  failedCount={failedCount}
+                  lastSyncTime={lastSyncTime}
+                  syncing={feishuSyncing}
+                  onTestConnection={testFeishuConnection}
+                  onSyncAll={syncAllToFeishu}
+                  errors={feishuErrors}
+                />
+              </div>
+
+              {customers.length > 0 && (
+                <>
+                  <Divider />
+                  <div className="table-section">
+                    <Title level={4}>客户结果</Title>
+                    <CustomerTable 
+                      data={customers}
+                      loading={isProcessing}
+                      onViewDetail={viewCustomerDetail}
+                    />
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
+      </Content>
 
-        {error && <div className="error-message">{error}</div>}
-
-        <button 
-          className="upload-button" 
-          onClick={handleUpload}
-          disabled={isUploading || !file}
-        >
-          {isUploading ? '上传中...' : '上传并解析'}
-        </button>
-
-        {isUploading && (
-          <div className="progress-container">
-            <div className="progress-bar">
-              <div 
-                className="progress-fill" 
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-            <span>{uploadProgress}%</span>
-          </div>
-        )}
-      </div>
-
-      {uploadResult && (
-        <div className="result-container">
-          <h2>上传结果</h2>
-          <div className="result-card">
-            <p><strong>状态:</strong> {uploadResult.status}</p>
-            <p><strong>文件 ID:</strong> {uploadResult.file_id}</p>
-            <p><strong>文件名:</strong> {uploadResult.filename}</p>
-            <p><strong>OpenAI 文件 ID:</strong> {uploadResult.openai_file_id}</p>
-          </div>
-        </div>
-      )}
-
-      <div className="search-container">
-        <h2>候选客户搜索</h2>
-        
-        <div className="search-form">
-          <div className="form-group">
-            <label>搜索关键词（逗号分隔）</label>
-            <input 
-              type="text" 
-              value={searchKeywords}
-              onChange={(e) => setSearchKeywords(e.target.value)}
-              placeholder="例如：trade, import, export"
-              disabled={isSearching}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>行业</label>
-            <input 
-              type="text" 
-              value={searchIndustry}
-              onChange={(e) => setSearchIndustry(e.target.value)}
-              placeholder="例如：Technology, Trade"
-              disabled={isSearching}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>位置</label>
-            <input 
-              type="text" 
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-              placeholder="例如：United States, China"
-              disabled={isSearching}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>公司规模</label>
-            <input 
-              type="text" 
-              value={searchCompanySize}
-              onChange={(e) => setSearchCompanySize(e.target.value)}
-              placeholder="例如：Small, Medium, Large"
-              disabled={isSearching}
-            />
-          </div>
-
-          {searchError && <div className="error-message">{searchError}</div>}
-
-          <button 
-            className="search-button" 
-            onClick={handleSearch}
-            disabled={isSearching || !searchKeywords.trim()}
-          >
-            {isSearching ? '搜索中...' : '搜索客户'}
-          </button>
-        </div>
-
-        {searchResults.length > 0 && (
-          <div className="search-results">
-            <h3>搜索结果 ({searchResults.length})</h3>
-            <div className="results-grid">
-              {searchResults.map((result, index) => (
-                <div key={index} className="result-card">
-                  <h4>{result.company_name}</h4>
-                  <p><strong>行业:</strong> {result.industry}</p>
-                  <p><strong>位置:</strong> {result.location}</p>
-                  <p><strong>网站:</strong> <a href={result.website} target="_blank" rel="noopener noreferrer">{result.website}</a></p>
-                  <p><strong>来源:</strong> {result.source}</p>
-                  <p><strong>来源链接:</strong> <a href={result.source_url} target="_blank" rel="noopener noreferrer">查看</a></p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="info-section">
-        <h2>功能说明</h2>
-        <p>本系统提供以下功能：</p>
-        <ul>
-          <li>上传 PDF 文件并解析</li>
-          <li>基于公司画像生成客户策略</li>
-          <li>搜索候选客户</li>
-        </ul>
-      </div>
-    </div>
-  )
+      <CustomerDetailDrawer 
+        visible={drawerVisible}
+        onClose={() => setDrawerVisible(false)}
+        customer={selectedCustomer}
+        onSyncToFeishu={() => syncToFeishu(selectedCustomer)}
+        syncing={feishuSyncing}
+      />
+    </Layout>
+  );
 }
 
-export default App
+export default App;
