@@ -482,138 +482,123 @@ function App() {
 
       <Content className="app-content">
         <div className="content-wrapper">
-          <div className="upload-section">
-            <Card>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px' }}>
-                <Title level={4} style={{ marginBottom: '24px' }}>步骤 1: 上传公司资料</Title>
-                <Dragger {...uploadProps} className="upload-dragger" style={{ width: '100%', maxWidth: '600px' }}>
-                  <p className="ant-upload-drag-icon">
-                    <InboxOutlined style={{ fontSize: 48, color: '#1890ff' }} />
-                  </p>
-                  <p className="ant-upload-text">
-                    点击或拖拽上传公司导航/产品资料 PDF
-                  </p>
-                  <p className="ant-upload-hint">
-                    支持单个 PDF 文件上传
-                  </p>
-                </Dragger>
-                {file && (
-                  <div style={{ marginTop: '16px', width: '100%', maxWidth: '600px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <Text strong>已选择文件：</Text>
-                        <Text style={{ marginLeft: 8 }}>{file.name}</Text>
-                      </div>
-                      <Button 
-                        type="primary" 
-                        size="large"
-                        icon={<PlayCircleOutlined />}
-                        onClick={startFullProcess}
-                        loading={isProcessing}
-                        disabled={isProcessing}
-                      >
-                        {isProcessing ? '处理中...' : '开始执行'}
-                      </Button>
+          <Card className="main-card">
+            <div className="form-section">
+              <Title level={4}>外贸获客智能体</Title>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', marginBottom: '24px' }}>
+                <div style={{ flex: '1 1 300px' }}>
+                  <Upload {...uploadProps} style={{ width: '100%' }}>
+                    <Button icon={<InboxOutlined />}>选择 PDF 文件</Button>
+                  </Upload>
+                  {file && (
+                    <div style={{ marginTop: '8px' }}>
+                      <Text strong>已选择文件：</Text>
+                      <Text style={{ marginLeft: '8px' }}>{file.name}</Text>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+                <Button 
+                  type="primary" 
+                  icon={<PlayCircleOutlined />}
+                  onClick={startFullProcess}
+                  loading={isProcessing}
+                  disabled={!file || isProcessing}
+                >
+                  {isProcessing ? '处理中...' : '开始执行'}
+                </Button>
               </div>
-            </Card>
-          </div>
+            </div>
 
-          {file && (
-            <>
-              <div className="steps-section" style={{ marginTop: '24px' }}>
-                <Title level={4}>处理流程</Title>
-                <Steps current={currentStep} direction="vertical" size="small">
-                  <Step title="上传 PDF" description="文件上传与预处理" />
-                  <Step title="公司画像" description="提取公司信息" />
-                  <Step title="客户策略" description="生成目标客户方向" />
-                  <Step title="客户搜索" description="搜索候选客户" />
-                  <Step title="客户分级" description="S/A/B/C/D 分级" />
-                  <Step title="动作建议" description="生成跟进建议" />
-                </Steps>
-              </div>
+            <div className="steps-section">
+              <Title level={5}>处理流程</Title>
+              <Steps current={currentStep} size="small">
+                <Step title="上传 PDF" description="文件上传与预处理" />
+                <Step title="公司画像" description="提取公司信息" />
+                <Step title="客户策略" description="生成目标客户方向" />
+                <Step title="客户搜索" description="搜索候选客户" />
+                <Step title="客户分级" description="S/A/B/C/D 分级" />
+                <Step title="动作建议" description="生成跟进建议" />
+              </Steps>
+            </div>
 
-              <Divider />
+            <Divider />
 
-              <div className="agents-section">
-                <Title level={4}>Agent 工作状态</Title>
-                <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
-                    <AgentCard 
-                      type="company"
-                      status={agentStatuses.company}
-                      progress={agentProgress.company}
-                      data={agentData.company}
-                    />
-                  </Col>
-                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
-                    <AgentCard 
-                      type="search"
-                      status={agentStatuses.search}
-                      progress={agentProgress.search}
-                      data={agentData.search}
-                    />
-                  </Col>
-                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
-                    <AgentCard 
-                      type="grading"
-                      status={agentStatuses.grading}
-                      progress={agentProgress.grading}
-                      data={agentData.grading}
-                    />
-                  </Col>
-                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
-                    <AgentCard 
-                      type="action"
-                      status={agentStatuses.action}
-                      progress={agentProgress.action}
-                      data={agentData.action}
-                    />
-                  </Col>
-                  <Col xs={24} sm={12} md={12} lg={8} xl={8}>
-                    <AgentCard 
-                      type="feishu"
-                      status={agentStatuses.feishu}
-                      progress={agentProgress.feishu}
-                      data={agentData.feishu}
-                    />
-                  </Col>
-                </Row>
-              </div>
+            <div className="agents-section">
+              <Title level={5}>Agent 工作状态</Title>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                  <AgentCard 
+                    type="company"
+                    status={agentStatuses.company}
+                    progress={agentProgress.company}
+                    data={agentData.company}
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                  <AgentCard 
+                    type="search"
+                    status={agentStatuses.search}
+                    progress={agentProgress.search}
+                    data={agentData.search}
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                  <AgentCard 
+                    type="grading"
+                    status={agentStatuses.grading}
+                    progress={agentProgress.grading}
+                    data={agentData.grading}
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                  <AgentCard 
+                    type="action"
+                    status={agentStatuses.action}
+                    progress={agentProgress.action}
+                    data={agentData.action}
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={12} lg={8} xl={8}>
+                  <AgentCard 
+                    type="feishu"
+                    status={agentStatuses.feishu}
+                    progress={agentProgress.feishu}
+                    data={agentData.feishu}
+                  />
+                </Col>
+              </Row>
+            </div>
 
-              <Divider />
+            <Divider />
 
-              <div className="feishu-section">
-                <FeishuStatus 
-                  connectionStatus={feishuConnectionStatus}
-                  totalCount={customers.length}
-                  syncedCount={syncedCount}
-                  failedCount={failedCount}
-                  lastSyncTime={lastSyncTime}
-                  syncing={feishuSyncing}
-                  onTestConnection={testFeishuConnection}
-                  onSyncAll={syncAllToFeishu}
-                  errors={feishuErrors}
-                />
-              </div>
+            <div className="feishu-section">
+              <FeishuStatus 
+                connectionStatus={feishuConnectionStatus}
+                totalCount={customers.length}
+                syncedCount={syncedCount}
+                failedCount={failedCount}
+                lastSyncTime={lastSyncTime}
+                syncing={feishuSyncing}
+                onTestConnection={testFeishuConnection}
+                onSyncAll={syncAllToFeishu}
+                errors={feishuErrors}
+              />
+            </div>
 
-              {customers.length > 0 && (
-                <>
-                  <Divider />
-                  <div className="table-section">
-                    <Title level={4}>客户结果</Title>
-                    <CustomerTable 
-                      data={customers}
-                      loading={isProcessing}
-                      onViewDetail={viewCustomerDetail}
-                    />
-                  </div>
-                </>
-              )}
-            </>
-          )}
+            {customers.length > 0 && (
+              <>
+                <Divider />
+                <div className="table-section">
+                  <Title level={5}>客户结果</Title>
+                  <CustomerTable 
+                    data={customers}
+                    loading={isProcessing}
+                    onViewDetail={viewCustomerDetail}
+                  />
+                </div>
+              </>
+            )}
+          </Card>
         </div>
       </Content>
 
