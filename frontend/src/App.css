@@ -57,11 +57,43 @@ body {
   margin-bottom: 24px;
 }
 
-.upload-dragger {
-  background: white;
-  border-radius: 12px;
-  padding: 40px 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.upload-section .ant-btn {
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.upload-section .ant-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.upload-section .ant-upload-list {
+  margin-top: 12px;
+}
+
+.upload-section .ant-upload-list-item {
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  padding: 8px 12px;
+  background: #fafafa;
+}
+
+.upload-section .ant-upload-list-item-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upload-section .ant-upload-list-item-name {
+  font-size: 14px;
+  color: #333;
+}
+
+.upload-section .ant-upload-list-item-status-text {
+  font-size: 12px;
+  color: #52c41a;
 }
 
 .steps-section {
