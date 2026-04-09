@@ -50,34 +50,60 @@ body {
 }
 
 .form-section {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+}
+
+.form-section .ant-typography-title {
+  margin-bottom: 24px !important;
+  color: #333;
+  font-weight: 600;
 }
 
 .upload-section {
   margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.upload-section .ant-upload {
+  flex: 1 1 300px;
 }
 
 .upload-section .ant-btn {
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 10px 20px;
   font-size: 14px;
+  font-weight: 500;
   transition: all 0.3s ease;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #333;
 }
 
 .upload-section .ant-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
 }
 
 .upload-section .ant-upload-list {
+  flex: 1 1 100%;
   margin-top: 12px;
 }
 
 .upload-section .ant-upload-list-item {
   border-radius: 8px;
   border: 1px solid #e8e8e8;
-  padding: 8px 12px;
+  padding: 12px 16px;
   background: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.upload-section .ant-upload-list-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .upload-section .ant-upload-list-item-info {
@@ -89,11 +115,26 @@ body {
 .upload-section .ant-upload-list-item-name {
   font-size: 14px;
   color: #333;
+  font-weight: 500;
 }
 
 .upload-section .ant-upload-list-item-status-text {
   font-size: 12px;
   color: #52c41a;
+  font-weight: 500;
+}
+
+.start-button {
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.start-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .steps-section {

@@ -503,6 +503,7 @@ function App() {
                   onClick={startFullProcess}
                   loading={isProcessing}
                   disabled={!file || isProcessing}
+                  className="start-button"
                 >
                   {isProcessing ? '处理中...' : '开始执行'}
                 </Button>
