@@ -3,6 +3,7 @@ import { Table, Tag, Space, Button } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
 
 const gradeColorMap = {
+  'S': '#722ed1',
   'A': '#52c41a',
   'B': '#1890ff',
   'C': '#faad14',

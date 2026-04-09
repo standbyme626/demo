@@ -3,6 +3,7 @@ import { Drawer, Descriptions, Tag, Divider, Card, Space, Button } from 'antd';
 import { ShareAltOutlined } from '@ant-design/icons';
 
 const gradeColorMap = {
+  'S': '#722ed1',
   'A': '#52c41a',
   'B': '#1890ff',
   'C': '#faad14',

@@ -30,7 +30,7 @@ const agentConfig = {
     title: '分级 Agent',
     icon: <TrophyOutlined style={{ fontSize: '24px' }} />,
     color: '#faad14',
-    description: '对客户进行 A/B/C/D 分级',
+    description: '对客户进行 S/A/B/C/D 分级',
   },
   action: {
     title: '动作建议 Agent',
