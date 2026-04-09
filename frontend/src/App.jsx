@@ -482,50 +482,55 @@ function App() {
 
       <Content className="app-content">
         <div className="content-wrapper">
-          {!file ? (
-            <div className="upload-section">
-              <Dragger {...uploadProps} className="upload-dragger">
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined style={{ fontSize: 48, color: '#1890ff' }} />
-                </p>
-                <p className="ant-upload-text">
-                  点击或拖拽上传公司导航/产品资料 PDF
-                </p>
-                <p className="ant-upload-hint">
-                  支持单个 PDF 文件上传
-                </p>
-              </Dragger>
-            </div>
-          ) : (
-            <>
-              <div className="control-section">
-                <Card>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <Text strong>已选择文件：</Text>
-                      <Text style={{ marginLeft: 8 }}>{file.name}</Text>
+          <div className="upload-section">
+            <Card>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px' }}>
+                <Title level={4} style={{ marginBottom: '24px' }}>步骤 1: 上传公司资料</Title>
+                <Dragger {...uploadProps} className="upload-dragger" style={{ width: '100%', maxWidth: '600px' }}>
+                  <p className="ant-upload-drag-icon">
+                    <InboxOutlined style={{ fontSize: 48, color: '#1890ff' }} />
+                  </p>
+                  <p className="ant-upload-text">
+                    点击或拖拽上传公司导航/产品资料 PDF
+                  </p>
+                  <p className="ant-upload-hint">
+                    支持单个 PDF 文件上传
+                  </p>
+                </Dragger>
+                {file && (
+                  <div style={{ marginTop: '16px', width: '100%', maxWidth: '600px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <Text strong>已选择文件：</Text>
+                        <Text style={{ marginLeft: 8 }}>{file.name}</Text>
+                      </div>
+                      <Button 
+                        type="primary" 
+                        size="large"
+                        icon={<PlayCircleOutlined />}
+                        onClick={startFullProcess}
+                        loading={isProcessing}
+                        disabled={isProcessing}
+                      >
+                        {isProcessing ? '处理中...' : '开始执行'}
+                      </Button>
                     </div>
-                    <Button 
-                      type="primary" 
-                      size="large"
-                      icon={<PlayCircleOutlined />}
-                      onClick={startFullProcess}
-                      loading={isProcessing}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? '处理中...' : '开始执行'}
-                    </Button>
                   </div>
-                </Card>
+                )}
               </div>
+            </Card>
+          </div>
 
-              <div className="steps-section">
+          {file && (
+            <>
+              <div className="steps-section" style={{ marginTop: '24px' }}>
+                <Title level={4}>处理流程</Title>
                 <Steps current={currentStep} direction="vertical" size="small">
                   <Step title="上传 PDF" description="文件上传与预处理" />
                   <Step title="公司画像" description="提取公司信息" />
                   <Step title="客户策略" description="生成目标客户方向" />
                   <Step title="客户搜索" description="搜索候选客户" />
-                  <Step title="客户分级" description="A/B/C/D 分级" />
+                  <Step title="客户分级" description="S/A/B/C/D 分级" />
                   <Step title="动作建议" description="生成跟进建议" />
                 </Steps>
               </div>
