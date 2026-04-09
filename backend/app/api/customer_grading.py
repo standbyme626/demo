@@ -46,18 +46,19 @@ class GradedCustomer:
 class CustomerGrader:
     def __init__(self):
         self.grade_intervals = {
-            "A": (85, 100),
-            "B": (70, 84),
-            "C": (50, 69),
-            "D": (0, 49)
+            "S": (85, 100),
+            "A": (70, 84),
+            "B": (50, 69),
+            "C": (30, 49),
+            "D": (0, 29)
         }
         
         self.dimensions = [
-            {"name": "市场匹配度", "weight": 30, "max_score": 30},
-            {"name": "行业相关性", "weight": 25, "max_score": 25},
-            {"name": "公司规模与实力", "weight": 20, "max_score": 20},
-            {"name": "采购潜力", "weight": 15, "max_score": 15},
-            {"name": "联系可达性", "weight": 10, "max_score": 10}
+            {"name": "公司类型匹配度", "max_score": 20},
+            {"name": "采购规模匹配度", "max_score": 25},
+            {"name": "决策人可触达性", "max_score": 20},
+            {"name": "意图信号强度", "max_score": 20},
+            {"name": "地域+认证匹配", "max_score": 15}
         ]
     
     def grade_customer(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> GradedCustomer:
@@ -85,73 +86,44 @@ class CustomerGrader:
     def _apply_rule_based_scoring(self, graded_customer: GradedCustomer, company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]):
         customer = graded_customer.customer_data
         
-        market_score = self._score_market_match(customer, company_profile, customer_strategy)
-        graded_customer.dimension_scores.append(market_score)
+        company_type_score = self._score_company_type_match(customer, company_profile, customer_strategy)
+        graded_customer.dimension_scores.append(company_type_score)
         
-        industry_score = self._score_industry_relevance(customer, company_profile, customer_strategy)
-        graded_customer.dimension_scores.append(industry_score)
+        procurement_size_score = self._score_procurement_size_match(customer, company_profile, customer_strategy)
+        graded_customer.dimension_scores.append(procurement_size_score)
         
-        size_score = self._score_company_size(customer, company_profile, customer_strategy)
-        graded_customer.dimension_scores.append(size_score)
+        decision_maker_access_score = self._score_decision_maker_accessibility(customer, company_profile, customer_strategy)
+        graded_customer.dimension_scores.append(decision_maker_access_score)
         
-        potential_score = self._score_purchase_potential(customer, company_profile, customer_strategy)
-        graded_customer.dimension_scores.append(potential_score)
+        intent_signal_score = self._score_intent_signal_strength(customer, company_profile, customer_strategy)
+        graded_customer.dimension_scores.append(intent_signal_score)
         
-        contact_score = self._score_contact_accessibility(customer, company_profile, customer_strategy)
-        graded_customer.dimension_scores.append(contact_score)
+        region_certification_score = self._score_region_certification_match(customer, company_profile, customer_strategy)
+        graded_customer.dimension_scores.append(region_certification_score)
         
         graded_customer.total_score = sum(ds.score for ds in graded_customer.dimension_scores)
     
-    def _score_market_match(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
+    def _score_company_type_match(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
         score = 0.0
         reason = ""
-        customer_location = customer.get("location", "").lower()
-        
-        recommended_markets = [m.lower() for m in customer_strategy.get("recommended_markets", [])]
-        
-        if customer_location in recommended_markets:
-            score = 30.0
-            reason = f"客户位于推荐市场 '{customer.get('location', '未知')}'"
-        elif any(market in customer_location for market in recommended_markets):
-            score = 20.0
-            reason = f"客户位于相关市场区域 '{customer.get('location', '未知')}'"
-        elif customer_location:
-            score = 10.0
-            reason = f"客户位于非推荐市场 '{customer.get('location', '未知')}'"
-        else:
-            score = 5.0
-            reason = "客户位置信息缺失"
-        
-        return DimensionScore("市场匹配度", score, 30, reason)
-    
-    def _score_industry_relevance(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
-        score = 0.0
-        reason = ""
-        customer_industry = customer.get("industry", "").lower()
-        company_products = [p.lower() for p in company_profile.get("products_services", [])]
+        customer_type = customer.get("customer_type", "").lower()
         recommended_segments = [s.lower() for s in customer_strategy.get("recommended_segments", [])]
         
-        if any(segment in customer_industry for segment in recommended_segments):
-            score = 25.0
-            reason = f"客户行业 '{customer.get('industry', '未知')}' 匹配推荐客群"
-        elif any(product in customer_industry for product in company_products):
-            score = 18.0
-            reason = f"客户行业 '{customer.get('industry', '未知')}' 与公司产品相关"
-        elif customer_industry:
-            score = 10.0
-            reason = f"客户行业 '{customer.get('industry', '未知')}' 相关性较低"
+        if any(segment in customer_type for segment in recommended_segments):
+            score = 20.0
+            reason = f"客户类型 '{customer.get('customer_type', '未知')}' 高度匹配推荐客群"
+        elif customer_type:
+            score = 12.0
+            reason = f"客户类型 '{customer.get('customer_type', '未知')}' 基本匹配推荐客群"
         else:
             score = 5.0
-            reason = "客户行业信息缺失"
+            reason = "客户类型信息缺失，边缘匹配"
         
-        return DimensionScore("行业相关性", score, 25, reason)
+        return DimensionScore("公司类型匹配度", score, 20, reason)
     
-    def _score_company_size(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
+    def _score_procurement_size_match(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
         score = 0.0
         reason = ""
-        
-        icp_lite = customer_strategy.get("icp_lite", {})
-        target_size = icp_lite.get("company_size", "").lower()
         
         company_name = customer.get("company_name", "").lower()
         size_indicators = {
@@ -166,77 +138,87 @@ class CustomerGrader:
                 detected_size = size
                 break
         
-        if detected_size != "unknown" and target_size:
-            if detected_size == "large" and "large" in target_size:
-                score = 20.0
-                reason = "客户规模符合大型企业目标"
-            elif detected_size == "medium" and "medium" in target_size:
-                score = 18.0
-                reason = "客户规模符合中型企业目标"
-            elif detected_size == "small" and "small" in target_size:
-                score = 15.0
-                reason = "客户规模符合小型企业目标"
-            elif detected_size == "large":
-                score = 16.0
-                reason = "客户为大型企业，有较强实力"
-            elif detected_size == "medium":
-                score = 12.0
-                reason = "客户为中型企业，有一定实力"
-            else:
-                score = 8.0
-                reason = "客户为小型企业"
-        elif detected_size == "large":
-            score = 14.0
-            reason = "从公司名称判断为大型企业"
+        if detected_size == "large":
+            score = 25.0
+            reason = "客户规模较大，采购能力强，高度匹配"
         elif detected_size == "medium":
-            score = 10.0
-            reason = "从公司名称判断为中型企业"
+            score = 15.0
+            reason = "客户规模中等，采购能力一般，基本匹配"
         else:
-            score = 6.0
-            reason = "公司规模信息有限"
+            score = 5.0
+            reason = "客户规模较小，采购能力有限，过小或过大"
         
-        return DimensionScore("公司规模与实力", score, 20, reason)
+        return DimensionScore("采购规模匹配度", score, 25, reason)
     
-    def _score_purchase_potential(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
+    def _score_decision_maker_accessibility(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
         score = 0.0
         reason = ""
         
-        website = customer.get("website", "")
-        company_name = customer.get("company_name", "")
+        contact_name = customer.get("contact_name")
+        contact_role = customer.get("contact_role")
+        website = customer.get("website")
         
-        if website and "global" in website.lower() or "international" in website.lower():
-            score = 15.0
-            reason = "客户有国际化网站，可能有跨境采购需求"
+        if contact_name and contact_role:
+            score = 20.0
+            reason = "联系方式完整，职位明确，决策人可触达"
         elif website:
             score = 10.0
-            reason = "客户有官方网站，经营较为规范"
-        elif company_name:
-            score = 5.0
-            reason = "仅有公司名称，采购潜力有待核实"
+            reason = "有公司信息无联系人，可通过官网获取更多信息"
         else:
-            score = 2.0
-            reason = "客户信息不足，难以评估采购潜力"
+            score = 5.0
+            reason = "仅官网信息，决策人触达难度较大"
         
-        return DimensionScore("采购潜力", score, 15, reason)
+        return DimensionScore("决策人可触达性", score, 20, reason)
     
-    def _score_contact_accessibility(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
+    def _score_intent_signal_strength(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
         score = 0.0
         reason = ""
         
-        website = customer.get("website", "")
-        source_url = customer.get("source_url", "")
+        # 模拟意图信号检测
+        website = customer.get("website", "").lower()
+        company_name = customer.get("company_name", "").lower()
         
-        if website:
-            score = 10.0
-            reason = f"可通过官网 '{website}' 联系客户"
-        elif source_url:
-            score = 6.0
-            reason = f"可通过来源链接 '{source_url}' 获取更多信息"
+        signals = 0
+        if "supplier" in website or "vendor" in website:
+            signals += 1
+        if "global" in website or "international" in website:
+            signals += 1
+        if "buy" in website or "purchase" in website:
+            signals += 1
+        
+        if signals >= 2:
+            score = 20.0
+            reason = "2个以上强信号，采购意图明确"
+        elif signals == 1:
+            score = 12.0
+            reason = "1个强信号，有一定采购意图"
         else:
-            score = 2.0
-            reason = "缺乏直接联系方式"
+            score = 5.0
+            reason = "无明显采购信号"
         
-        return DimensionScore("联系可达性", score, 10, reason)
+        return DimensionScore("意图信号强度", score, 20, reason)
+    
+    def _score_region_certification_match(self, customer: Dict[str, Any], company_profile: Dict[str, Any], customer_strategy: Dict[str, Any]) -> DimensionScore:
+        score = 0.0
+        reason = ""
+        
+        customer_location = customer.get("location", "").lower()
+        recommended_markets = [m.lower() for m in customer_strategy.get("recommended_markets", [])]
+        
+        # 假设公司有基本认证
+        has_certification = True
+        
+        if customer_location in recommended_markets and has_certification:
+            score = 15.0
+            reason = "目标市场且有所需认证，匹配度高"
+        elif customer_location in recommended_markets:
+            score = 8.0
+            reason = "市场匹配但无认证，匹配度一般"
+        else:
+            score = 3.0
+            reason = "边缘市场，匹配度低"
+        
+        return DimensionScore("地域+认证匹配", score, 15, reason)
     
     def _determine_grade(self, graded_customer: GradedCustomer):
         score = graded_customer.total_score
@@ -253,10 +235,11 @@ class CustomerGrader:
         score = graded_customer.total_score
         
         grade_descriptions = {
-            "A": "极高价值客户，建议优先重点跟进",
-            "B": "高价值客户，建议积极跟进",
-            "C": "中等价值客户，可适度跟进",
-            "D": "低价值客户，可暂不投入或作为备选"
+            "S": "S级（本周冲刺），极高价值客户，建议立即重点跟进",
+            "A": "A级（本周内首次触达），高价值客户，建议积极跟进",
+            "B": "B级（本月内跟进），中等价值客户，可适度跟进",
+            "C": "C级（长期维护），低价值客户，可长期维护",
+            "D": "自动排除，无价值客户，建议排除"
         }
         
         graded_customer.grade_reason = f"客户综合得分为 {score:.1f} 分，评定为 {grade} 级。{grade_descriptions.get(grade, '')}"
