@@ -1,0 +1,225 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f0f2f5;
+}
+
+.app-layout {
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  height: 64px;
+}
+
+.header-content {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-content {
+  padding: 24px;
+}
+
+.content-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.main-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 32px;
+  margin-bottom: 24px;
+  background: white;
+}
+
+.form-section {
+  margin-bottom: 32px;
+}
+
+.form-section .ant-typography-title {
+  margin-bottom: 24px !important;
+  color: #333;
+  font-weight: 600;
+}
+
+.upload-section {
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.upload-section .ant-upload {
+  flex: 1 1 300px;
+}
+
+.upload-section .ant-btn {
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #333;
+}
+
+.upload-section .ant-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+}
+
+.upload-section .ant-upload-list {
+  flex: 1 1 100%;
+  margin-top: 12px;
+}
+
+.upload-section .ant-upload-list-item {
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  padding: 12px 16px;
+  background: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.upload-section .ant-upload-list-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.upload-section .ant-upload-list-item-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upload-section .ant-upload-list-item-name {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.upload-section .ant-upload-list-item-status-text {
+  font-size: 12px;
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.start-button {
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.start-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.steps-section {
+  margin-bottom: 24px;
+}
+
+.steps-section .ant-steps {
+  margin-top: 16px;
+}
+
+.agents-section {
+  margin-bottom: 24px;
+}
+
+.agents-section .ant-typography {
+  margin-bottom: 16px;
+}
+
+.agent-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.agent-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.feishu-section {
+  margin-bottom: 24px;
+}
+
+.feishu-status-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.table-section {
+  margin-top: 16px;
+}
+
+.customer-table .ant-table-wrapper {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ant-divider {
+  margin: 24px 0;
+}
+
+.ant-upload-drag-icon .anticon {
+  color: #667eea !important;
+}
+
+.ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+}
+
+.ant-steps-item-process .ant-steps-item-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+}
+
+.ant-progress-bg {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+@media (max-width: 768px) {
+  .app-content {
+    padding: 16px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .app-header {
+    height: auto;
+    padding: 16px;
+  }
+}
